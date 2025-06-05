@@ -1,0 +1,183 @@
+Perfect. Below is a setup.sh script that will:
+
+1. Create all necessary directories and files for Multiplayer-RiseofHero-Celestial.
+
+
+2. Populate them with the core FastAPI, Rust (Actix), and C++ engine logic.
+
+
+3. Generate a zip file: Multiplayer-RiseofHero-Celestial.zip.
+
+
+
+
+---
+
+✅ Steps to Use
+
+1. Create a file named setup.sh
+
+
+2. Paste the following content into it.
+
+
+3. Run it with:
+
+bash setup.sh
+
+
+
+
+---
+
+🛠 setup.sh
+
+#!/bin/bash
+
+set -e
+
+ROOT="Multiplayer-RiseofHero-Celestial"
+echo "Creating project root: $ROOT"
+mkdir -p $ROOT/game_core/src
+mkdir -p $ROOT/python_ai_fastapi
+mkdir -p $ROOT/rust_agi_service/src
+mkdir -p $ROOT/wallet_integration
+
+# --- C++ Game Core ---
+cat <<EOF > $ROOT/game_core/CMakeLists.txt
+cmake_minimum_required(VERSION 3.10)
+project(RiseOfHero)
+
+set(CMAKE_CXX_STANDARD 17)
+
+add_executable(RiseOfHero
+    src/main.cpp
+)
+EOF
+
+cat <<EOF > $ROOT/game_core/src/main.cpp
+#include <iostream>
+int main() {
+    std::cout << "Rise of Hero VR Engine started!" << std::endl;
+    return 0;
+}
+EOF
+
+# --- Python FastAPI Service ---
+cat <<EOF > $ROOT/python_ai_fastapi/main.py
+from fastapi import FastAPI, Request
+from gifting_logic import add_purchase
+
+app = FastAPI()
+
+@app.post("/gift")
+async def gift(request: Request):
+    data = await request.json()
+    tier = add_purchase(data["user_id"], data["amount"])
+    return {"tier": tier, "free_gift": True}
+EOF
+
+cat <<EOF > $ROOT/python_ai_fastapi/gifting_logic.py
+user_spend_db = {}
+
+def add_purchase(user_id, amount_usd):
+    user_spend_db.setdefault(user_id, 0)
+    user_spend_db[user_id] += amount_usd
+    return check_tier(user_spend_db[user_id])
+
+def check_tier(spend):
+    if spend >= 50:
+        return "III"
+    elif spend >= 10:
+        return "II"
+    elif spend > 0:
+        return "I"
+    return "Free"
+EOF
+
+# --- Rust AGI Service ---
+cat <<EOF > $ROOT/rust_agi_service/Cargo.toml
+[package]
+name = "rust_agi_service"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+actix-web = "4"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+EOF
+
+cat <<EOF > $ROOT/rust_agi_service/src/main.rs
+use actix_web::{post, web, App, HttpServer, Responder};
+use serde::Deserialize;
+
+#[derive(Deserialize)]
+struct AGIInput {
+    user_id: String,
+    action: String,
+}
+
+#[post("/agi")]
+async fn agi_handler(info: web::Json<AGIInput>) -> impl Responder {
+    format!("AGI verdict for {} on action {}: approved", info.user_id, info.action)
+}
+
+#[actix_web::main]
+async fn main() -> std::io::Result<()> {
+    HttpServer::new(|| App::new().service(agi_handler))
+        .bind(("0.0.0.0", 9000))?
+        .run()
+        .await
+}
+EOF
+
+# --- Bitcoin Simulation ---
+cat <<EOF > $ROOT/wallet_integration/bitcoin_payment.py
+def simulate_btc_payment(user_id: str, amount_btc: float):
+    usd_estimate = amount_btc * 68000
+    from python_ai_fastapi.gifting_logic import add_purchase
+    return add_purchase(user_id, usd_estimate)
+EOF
+
+# --- Makefile ---
+cat <<EOF > $ROOT/Makefile
+run-fastapi:
+\tcd python_ai_fastapi && uvicorn main:app --host 0.0.0.0 --port 8000
+
+run-rust:
+\tcd rust_agi_service && cargo run
+
+build-game:
+\tcd game_core && mkdir -p build && cd build && cmake .. && make
+
+run-all:
+\tdocker-compose up --build
+EOF
+
+# --- Docker Compose ---
+cat <<EOF > $ROOT/docker-compose.yml
+version: "3.9"
+services:
+  fastapi_ai:
+    build: ./python_ai_fastapi
+    ports:
+      - "8000:8000"
+  rust_agi:
+    build: ./rust_agi_service
+    ports:
+      - "9000:9000"
+  game_core:
+    build: ./game_core
+    command: ./RiseOfHero
+EOF
+
+# --- Zip the package ---
+zip -r "${ROOT}.zip" $ROOT
+echo "✅ Done! Package zipped as: ${ROOT}.zip"
+
+
+---
+
+Would you like me to include a script for installing IronPython 4, Actix dependencies, or a SteamVR hook next?
+
