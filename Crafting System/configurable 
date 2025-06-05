@@ -1,0 +1,148 @@
+Sure! Here’s a detailed set of build and run scripts you can use to configure your full system. This will help you build all parts (C++, Rust, Python) and launch services smoothly.
+
+
+---
+
+1. setup.sh — Master Build & Run Script (Linux/macOS)
+
+#!/bin/bash
+set -e
+
+echo "=== Building C++ Game Core ==="
+cd game_core
+mkdir -p build
+cd build
+cmake ..
+make
+cd ../../
+
+echo "=== Building Rust Microservices ==="
+for service in rust_agi_service bio_celestial_machine_rust dark_heroes_rust; do
+  echo "Building $service..."
+  cd $service
+  cargo build --release
+  cd ..
+done
+
+echo "=== Installing Python Dependencies ==="
+cd python_ai_fastapi
+pip install -r requirements.txt
+cd ..
+
+echo "=== Starting Docker Compose Services ==="
+docker-compose up -d
+
+echo "=== Setup Complete ==="
+
+Make sure this script is executable:
+
+chmod +x setup.sh
+
+Run it from your project root:
+
+./setup.sh
+
+
+---
+
+2. Makefile for game_core/ (C++)
+
+all:
+	g++ -std=c++17 main.cpp -o riseofhero
+
+clean:
+	rm -f riseofhero
+
+
+---
+
+3. CMakeLists.txt for game_core/
+
+cmake_minimum_required(VERSION 3.15)
+project(RiseOfHeroCore)
+
+set(CMAKE_CXX_STANDARD 17)
+
+add_executable(riseofhero main.cpp)
+
+
+---
+
+4. Dockerfile for Rust Microservices (e.g. in rust_agi_service/)
+
+Create a Dockerfile in each Rust microservice folder:
+
+FROM rust:1.70
+
+WORKDIR /usr/src/app
+COPY . .
+
+RUN cargo build --release
+
+CMD ["./target/release/rust_agi_service"]
+
+Make sure to rename the last command binary for each microservice accordingly.
+
+
+---
+
+5. Dockerfile for Python Backend (python_ai_fastapi/)
+
+FROM python:3.11-slim
+
+WORKDIR /app
+COPY . .
+
+RUN pip install --no-cache-dir -r requirements.txt
+
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8500", "--reload"]
+
+
+---
+
+6. docker-compose.yml
+
+version: '3.8'
+
+services:
+  rust_agi_service:
+    build: ./rust_agi_service
+    ports:
+      - "8000:8000"
+
+  bio_celestial_machine:
+    build: ./bio_celestial_machine_rust
+    ports:
+      - "8100:8000"
+
+  dark_heroes:
+    build: ./dark_heroes_rust
+    ports:
+      - "8200:8000"
+
+  python_backend:
+    build: ./python_ai_fastapi
+    ports:
+      - "8500:8500"
+
+
+---
+
+Usage Summary:
+
+Build C++ core: ./setup.sh runs CMake + Makefile
+
+Build Rust microservices: cargo build inside each Rust folder + Docker build with docker-compose
+
+Build Python backend: pip install + Docker build + run with docker-compose
+
+Run everything: docker-compose up -d launches microservices + backend
+
+React frontend: run inside web_dashboard with npm start (separate from this script)
+
+
+
+---
+
+If you want, I can provide the full folder structure and file content for each part too — just let me know!
+
