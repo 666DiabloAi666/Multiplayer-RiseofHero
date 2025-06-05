@@ -1,0 +1,93 @@
+# Root repo: Multiplayer-RiseofHero-Celestial
+
+# Directory: game_core/ (C++ Game Engine Core)
+# File: CMakeLists.txt
+cmake_minimum_required(VERSION 3.10)
+project(RiseOfHero)
+
+set(CMAKE_CXX_STANDARD 17)
+
+add_executable(RiseOfHero
+    src/main.cpp
+    src/game.cpp
+    src/player.cpp
+)
+
+# Directory: game_core/src/
+# File: main.cpp
+#include <iostream>
+int main() {
+    std::cout << "Rise of Hero VR Engine started!" << std::endl;
+    return 0;
+}
+
+# Directory: python_ai_fastapi/
+# File: main.py
+from fastapi import FastAPI, Request
+from gifting_logic import add_purchase
+
+app = FastAPI()
+
+@app.post("/gift")
+async def gift(request: Request):
+    data = await request.json()
+    tier = add_purchase(data["user_id"], data["amount"])
+    return {"tier": tier, "free_gift": True}
+
+# File: gifting_logic.py
+user_spend_db = {}
+
+def add_purchase(user_id, amount_usd):
+    user_spend_db.setdefault(user_id, 0)
+    user_spend_db[user_id] += amount_usd
+    return check_tier(user_spend_db[user_id])
+
+def check_tier(spend):
+    if spend >= 50:
+        return "III"
+    elif spend >= 10:
+        return "II"
+    elif spend > 0:
+        return "I"
+    return "Free"
+
+# Directory: rust_agi_service/
+# File: Cargo.toml
+[package]
+name = "rust_agi_service"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+actix-web = "4"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+# File: src/main.rs
+use actix_web::{post, web, App, HttpServer, Responder};
+use serde::Deserialize;
+
+#[derive(Deserialize)]
+struct AGIInput {
+    user_id: String,
+    action: String,
+}
+
+#[post("/agi")]
+async fn agi_handler(info: web::Json<AGIInput>) -> impl Responder {
+    format!("AGI verdict for {} on action {}: approved", info.user_id, info.action)
+}
+
+#[actix_web::main]
+async fn main() -> std::io::Result<()> {
+    HttpServer::new(|| App::new().service(agi_handler))
+        .bind(("0.0.0.0", 9000))?
+        .run()
+        .await
+}
+
+# Directory: wallet_integration/
+# File: bitcoin_payment.py
+def simulate_btc_payment(user_id: str, amount_btc: float):
+    usd_estimate = amount_btc * 68000
+    from python_ai
